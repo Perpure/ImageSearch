@@ -1,5 +1,6 @@
 db_password.txt
 .idea/
+web/static/img
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

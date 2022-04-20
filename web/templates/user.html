@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container p-4">
+
+
+        {% if form %}
+            <div class="card shadow-2-strong mb-4" style="border-radius: 1rem;">
+                <div class="card-body p-5">
+                    <div class="mb-4 text-center">
+                        <h2>Сделать публикацию</h2>
+                    </div>
+                    <form action="" method="post" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-4 form-outline">
+                            {{ form.text.label(class_="form-label") }}
+                            {{ form.text(class_="form-control") }}
+                            {% if form.text.errors %}
+                                {% for error in form.login_reg.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="mb-4 form-outline">
+                            {{ form.files.label(class_="form-label") }}
+                            {{ form.files(class_="form-control") }}
+                            {% if form.files.errors %}
+                                {% for error in form.files.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="form-outline text-center">
+                            {{ form.submit(class_="btn btn-primary btn-block") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
+
+
+        {% if publications %}
+            {% for publication in publications %}
+                <div class="card shadow-2-strong mb-4" style="border-radius: 1rem;">
+                    <div class="card-body p-5">
+                        <div class="mb-4">{{ publication.text }}</div>
+                        {% if publication.images %}
+                            <div class="row row-cols-2">
+                                {% for image_path in publication.images %}
+                                    <div class="col p-4">
+                                        <img src="{{ url_for('static', filename=image_path) }}"
+                                             class="img-fluid gallery-image" alt="">
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        <div class="float-end text-secondary">{{ publication.date }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    <div id="modal-window" class="modal">
+        <img class="modal-content" id="modal-img">
+        <div id="caption"></div>
+    </div>
+    <script src="{{ url_for('static', filename='js/modal.js') }}"></script>
+{% endblock %}

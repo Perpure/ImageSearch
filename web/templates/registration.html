@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container py-5 h-100">
+        <div class="row d-flex justify-content-center align-items-center h-100">
+            <div class="col-12 col-md-8 col-lg-6 col-xl-4">
+                <div class="card shadow-2-strong" style="border-radius: 1rem;">
+                    <div class="card-body p-5">
+                        <div class="mb-4 text-center">
+                            <h2>Регистрация</h2>
+                        </div>
+                        <form action="" method="post">
+                            {{ reg_form.hidden_tag() }}
+                            <div class="mb-4 form-outline">
+                                {{ reg_form.login_reg.label(class_="form-label") }}
+                                {{ reg_form.login_reg(class_="form-control") }}
+                                {% if reg_form.login_reg.errors %}
+                                    {% for error in reg_form.login_reg.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <div class="mb-4 form-outline">
+                                {{ reg_form.password_reg.label(class_="form-label") }}
+                                {{ reg_form.password_reg(class_="form-control") }}
+                                {% if reg_form.password_reg.errors %}
+                                    {% for error in reg_form.password_reg.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <div class="mb-4 form-outline">
+                                {{ reg_form.confirm_reg.label(class_="form-label") }}
+                                {{ reg_form.confirm_reg(class_="form-control") }}
+                                {% if reg_form.confirm_reg.errors %}
+                                    {% for error in reg_form.confirm_reg.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                            <div class="form-outline text-center">
+                                {{ reg_form.submit_reg(class_="btn btn-primary btn-block") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

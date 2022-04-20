@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container-fluid p-4">
+    {% if publications %}
+        {% for publication in publications %}
+            <div class="card shadow-2-strong mb-4" style="border-radius: 1rem;">
+                <div class="card-body p-5">
+                    <div class="mb-4">{{ publication.text }}</div>
+                    {% if publication.images %}
+                        <div class="row row-cols-4">
+                            {% for image_path in publication.images %}
+                                <div class="col p-4">
+                                    <img src="{{ url_for('static', filename=image_path) }}" class="img-fluid gallery-image"
+                                         alt="">
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    <div class="float-end text-secondary">{{ publication.date }}</div>
+                </div>
+            </div>
+        {% endfor %}
+    {% endif %}
+    </div>
+    <div id="modal-window" class="modal">
+        <img class="modal-content" id="modal-img">
+      <div id="caption"></div>
+    </div>
+    <script src="{{ url_for('static', filename='js/modal.js') }}"></script>
+{% endblock %}

@@ -1,11 +1,10 @@
-import shutil
 import hashlib
-import os
-import json
+
+from sqlalchemy import desc
+
+from web import db
 from datetime import datetime
-from uuid import uuid4
-from flask import url_for
-from web import db, app
+
 
 ImageObjects = db.Table('ImageObjects', db.Model.metadata,
                         db.Column('image_id', db.Integer, db.ForeignKey('Image.id')),
@@ -42,6 +41,12 @@ class User(db.Model):
         db.session.add(self)
         db.session.commit()
 
+    def gather_publications(self):
+        """
+        :return: List[Dict['text': string, 'images': List[string], 'date': string]]
+        """
+        return [publication.format() for publication in reversed(self.publications)]
+
     @staticmethod
     def get(id=None, login=None):
         if login:
@@ -56,8 +61,10 @@ class Publication(db.Model):
     text = db.Column(db.String(), unique=False, nullable=True)
     author_id = db.Column(db.Integer, db.ForeignKey('User.id'), nullable=False)
     images = db.relationship('Image', backref='publication', lazy='joined')
+    date = db.Column(db.DateTime, nullable=False)
 
     def __init__(self, user, text='', image_paths=None):
+        self.date = datetime.now(tz=None)
         self.author_id = user.id
         self.text = text
         db.session.add(self)
@@ -67,11 +74,31 @@ class Publication(db.Model):
         db.session.add(self)
         db.session.commit()
 
+    def get_str_date(self):
+        return self.date.strftime('%d/%m/%Y %H:%M:%S')
+
+    def format(self):
+        """
+        :return: Dict['text': string, 'images': List[string], 'date': string]
+        """
+        return {'text': self.text,
+                'images': [image.path for image in self.images],
+                'date': self.get_str_date()}
+
+    @staticmethod
+    def get_all_publications():
+        """
+        :return: List[Dict['text': string, 'images': List[string], 'date': string]]
+        """
+        query = Publication.query.order_by(desc(Publication.date))
+        return [publication.format() for publication in query]
+
     @staticmethod
     def get(id=None):
         if id:
             return Publication.query.get(id)
         return Publication.query.all()
+
 
 class Image(db.Model):
     __tablename__ = 'Image'
@@ -87,6 +114,8 @@ class Image(db.Model):
         db.session.add(self)
         db.session.commit()
 
+
+
     @staticmethod
     def get(id=None, path=None):
         if id:
@@ -94,6 +123,8 @@ class Image(db.Model):
         if path:
             return Image.query.filter_by(path=path).first()
         return Image.query.all()
+
+
 
 
 class Object(db.Model):
