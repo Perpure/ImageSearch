@@ -1,30 +1,64 @@
 {% extends "base.html" %}
 {% block content %}
     <div class="container-fluid p-4">
-    {% if publications %}
-        {% for publication in publications %}
-            <div class="card shadow-2-strong mb-4" style="border-radius: 1rem;">
-                <div class="card-body p-5">
-                    <div class="mb-4">{{ publication.text }}</div>
-                    {% if publication.images %}
-                        <div class="row row-cols-4">
-                            {% for image_path in publication.images %}
-                                <div class="col p-4">
-                                    <img src="{{ url_for('static', filename=image_path) }}" class="img-fluid gallery-image"
-                                         alt="">
+        <form class="row d-flex align-items-center flex-column" action="" method="post">
+            {{ search_form.hidden_tag() }}
+            <div class="input-group" style="width: 80%">
+                {{ search_form.text(class_="form-control") }}
+                {{ search_form.submit(class_="btn btn-primary btn-block") }}
+            </div>
+        </form>
+    </div>
+    <div class="container-fluid p-4">
+        {% if pubs_coms_forms %}
+            {% for pub_coms_forms in pubs_coms_forms %}
+                <div class="card shadow-2-strong mb-4" style="border-radius: 1rem;">
+                    <div class="card-body p-5">
+                        <div class="mb-4">{{ pub_coms_forms[0].text }}</div>
+                        {% if pub_coms_forms[0].images %}
+                            <div class="row row-cols-4">
+                                {% for image in pub_coms_forms[0].images %}
+                                    <div class="col p-4">
+                                        <img src="{{ url_for('static', filename=image.path) }}"
+                                             class="img-fluid gallery-image"
+                                             alt="">
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if pub_coms_forms[1] %}
+                            {% for comment in pub_coms_forms[1] %}
+                                <div class="card shadow-2-strong mb-4 p-4" style="border-radius: 1rem;">
+                                    <div class="mb-1"><b>{{ comment.name }}</b></div>
+                                    <div class="mb-4">{{ comment.text }}</div>
+                                    <div class="float-end text-secondary">{{ comment.get_str_date() }}</div>
                                 </div>
                             {% endfor %}
-                        </div>
-                    {% endif %}
-                    <div class="float-end text-secondary">{{ publication.date }}</div>
+                        {% endif %}
+                        {% if user %}
+                            <form action="" method="post">
+                                {{ pub_coms_forms[2].hidden_tag() }}
+                                <div class="mb-4 form-outline">
+                                    {{ pub_coms_forms[2].text(class_="form-control") }}
+                                    {% for error in pub_coms_forms[2].text.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                <div class="form-outline">
+                                    {{ pub_coms_forms[2].submit(class_="btn btn-primary btn-block") }}
+                                </div>
+
+                            </form>
+                        {% endif %}
+                        <div class="float-end text-secondary">{{ get_str_date(pub_coms_forms[0].date) }}</div>
+                    </div>
                 </div>
-            </div>
-        {% endfor %}
-    {% endif %}
+            {% endfor %}
+        {% endif %}
     </div>
     <div id="modal-window" class="modal">
         <img class="modal-content" id="modal-img">
-      <div id="caption"></div>
+        <div id="caption"></div>
     </div>
     <script src="{{ url_for('static', filename='js/modal.js') }}"></script>
 {% endblock %}

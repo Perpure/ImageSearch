@@ -1,5 +1,6 @@
-db_password.txt
 .idea/
+web/db_password.txt
+scripts/data/russian_words.json
 web/static/img
 
 # Byte-compiled / optimized / DLL files

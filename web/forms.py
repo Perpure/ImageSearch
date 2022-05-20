@@ -5,7 +5,6 @@ from wtforms.validators import Length, EqualTo, ValidationError, Optional
 
 from web import images
 from web.models import User
-from web.helper import cur_user
 import re
 
 
@@ -58,3 +57,11 @@ class PublicationForm(FlaskForm):
     files = MultipleFileField('Прикрепить изображения', validators=[FileAllowed(images,
                                                                                 message="Некорректное расширение")])
     submit = SubmitField("Опубликовать")
+
+class CommentForm(FlaskForm):
+    text = TextAreaField("", validators=[])
+    submit = SubmitField("Комментировать")
+
+class SearchForm(FlaskForm):
+    text = StringField("", validators=[])
+    submit = SubmitField("Поиск")

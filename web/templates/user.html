@@ -45,15 +45,15 @@
                         <div class="mb-4">{{ publication.text }}</div>
                         {% if publication.images %}
                             <div class="row row-cols-2">
-                                {% for image_path in publication.images %}
+                                {% for image in publication.images %}
                                     <div class="col p-4">
-                                        <img src="{{ url_for('static', filename=image_path) }}"
+                                        <img src="{{ url_for('static', filename=image.path) }}"
                                              class="img-fluid gallery-image" alt="">
                                     </div>
                                 {% endfor %}
                             </div>
                         {% endif %}
-                        <div class="float-end text-secondary">{{ publication.date }}</div>
+                        <div class="float-end text-secondary">{{ publication.get_str_date() }}</div>
                     </div>
                 </div>
             {% endfor %}

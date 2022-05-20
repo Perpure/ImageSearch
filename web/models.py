@@ -1,23 +1,18 @@
 import hashlib
-
 from sqlalchemy import desc
-
-from web import db
+from web import db, app
 from datetime import datetime
-
-
-ImageObjects = db.Table('ImageObjects', db.Model.metadata,
-                        db.Column('image_id', db.Integer, db.ForeignKey('Image.id')),
-                        db.Column('object_id', db.Integer, db.ForeignKey('Object.id')))
+import requests
+from sqlalchemy import text
 
 class User(db.Model):
-    __tablename__ = 'User'
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     login = db.Column(db.String(32), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)
     name = db.Column(db.String(32), nullable=False)
     info = db.Column(db.String())
-    publications = db.relationship('Publication', backref='author', lazy='joined')
+    publications = db.relationship('Publication', backref='author', lazy='select')
 
     def __init__(self, login, password):
         self.login = login
@@ -41,12 +36,6 @@ class User(db.Model):
         db.session.add(self)
         db.session.commit()
 
-    def gather_publications(self):
-        """
-        :return: List[Dict['text': string, 'images': List[string], 'date': string]]
-        """
-        return [publication.format() for publication in reversed(self.publications)]
-
     @staticmethod
     def get(id=None, login=None):
         if login:
@@ -55,43 +44,51 @@ class User(db.Model):
             return User.query.get(id)
         return User.query.all()
 
+
 class Publication(db.Model):
-    __tablename__ = 'Publication'
+    __tablename__ = 'publication'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     text = db.Column(db.String(), unique=False, nullable=True)
-    author_id = db.Column(db.Integer, db.ForeignKey('User.id'), nullable=False)
-    images = db.relationship('Image', backref='publication', lazy='joined')
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     date = db.Column(db.DateTime, nullable=False)
+    images = db.relationship('Image', backref='publication', lazy='select')
 
-    def __init__(self, user, text='', image_paths=None):
+    def __init__(self, user_id, text='', image_paths=None, image_texts=None):
         self.date = datetime.now(tz=None)
-        self.author_id = user.id
+        self.author_id = user_id
         self.text = text
+
         db.session.add(self)
         db.session.commit()
-        for image_path in image_paths:
-            Image(image_path, self)
+
+        if image_texts:
+            for image_path, image_text in zip(image_paths, image_texts):
+                Image(image_path, self, image_text)
+        else:
+            for image_path in image_paths:
+                Image(image_path, self)
         db.session.add(self)
         db.session.commit()
 
     def get_str_date(self):
         return self.date.strftime('%d/%m/%Y %H:%M:%S')
 
-    def format(self):
-        """
-        :return: Dict['text': string, 'images': List[string], 'date': string]
-        """
-        return {'text': self.text,
-                'images': [image.path for image in self.images],
-                'date': self.get_str_date()}
+    @staticmethod
+    def full_text_search(query):
+        with db.engine.connect() as connection:
+            result = connection.execute(text(('SET pg_trgm.word_similarity_threshold = 0.4;'
+                                              f'SELECT * FROM full_text_search(\'{query}\');'))).all()
+            return result
+
 
     @staticmethod
-    def get_all_publications():
-        """
-        :return: List[Dict['text': string, 'images': List[string], 'date': string]]
-        """
+    def get_all_publications(limit=None, offset=None):
         query = Publication.query.order_by(desc(Publication.date))
-        return [publication.format() for publication in query]
+        if limit:
+            query = query.limit(limit)
+        if offset:
+            query = query.offset(offset)
+        return query
 
     @staticmethod
     def get(id=None):
@@ -101,20 +98,25 @@ class Publication(db.Model):
 
 
 class Image(db.Model):
-    __tablename__ = 'Image'
+    __tablename__ = 'image'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     path = db.Column(db.String(256), unique=True, nullable=False)
     text = db.Column(db.String(), unique=False, nullable=True)
-    publication_id = db.Column(db.Integer, db.ForeignKey('Publication.id'), nullable=False)
-    objects = db.relationship('Object', secondary=ImageObjects, backref='images', lazy='joined')
+    publication_id = db.Column(db.Integer, db.ForeignKey('publication.id'), nullable=False)
 
-    def __init__(self, path, publication):
+    def __init__(self, path, publication, text=None):
         self.path = path
         self.publication_id = publication.id
+        self.text = text
+
+        if not text and app.config['TEXT_RECOGNITION_URL']:
+            file = {'file': ('image.jpg', open(path, 'rb'), 'image/jpeg')}
+            res = requests.post(url=app.config['TEXT_RECOGNITION_URL'] + '/predictions/TextDetection', files=file)
+            if res.ok:
+                self.text = res.text
+
         db.session.add(self)
         db.session.commit()
-
-
 
     @staticmethod
     def get(id=None, path=None):
@@ -125,43 +127,30 @@ class Image(db.Model):
         return Image.query.all()
 
 
-
-
-class Object(db.Model):
-    __tablename__ = 'Object'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(256), unique=True, nullable=False)
-
-    def __init__(self, name):
-        self.name = name
-        db.session.add(self)
-        db.session.commit()
-
-    @staticmethod
-    def get(id=None, name=None):
-        if id:
-            return Object.query.get(id)
-        if name:
-            return Object.query.filter_by(name=name).first()
-        return Object.query.all()
-
-
 class Comment(db.Model):
-    __tablename__ = 'Comment'
+    __tablename__ = 'comment'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     text = db.Column(db.Text())
-    publication_id = db.Column(db.Integer, db.ForeignKey('Publication.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('User.id'), nullable=False)
+    publication_id = db.Column(db.Integer, db.ForeignKey('publication.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.DateTime, nullable=False)
 
-    def __init__(self, text, image_id, user_id):
+    def __init__(self, text, publication_id, user_id):
+        self.date = datetime.now(tz=None)
         self.text = text
         self.user_id = user_id
-        self.video_id = image_id
+        self.publication_id = publication_id
         db.session.add(self)
         db.session.commit()
 
+    def get_str_date(self):
+        return self.date.strftime('%d/%m/%Y %H:%M:%S')
+
     @staticmethod
-    def get(id=None):
+    def get(id=None, publication_id=None):
         if id:
-            return Object.query.get(id)
-        return Object.query.all()
+            return Comment.query.get(id)
+        if publication_id:
+            return Comment.query.filter_by(publication_id=publication_id) \
+                .join(User)
+        return Comment.query.all()
