@@ -9,7 +9,7 @@ app = Flask(__name__, static_url_path='/static')
 with open(os.path.join(pathlib.Path(__file__).parent.resolve(), 'db_password.txt'), 'r') as f:
     password = f.read()
 
-app.config['SQLALCHEMY_DATABASE_URI'] = (f'postgresql://postgres:{password}@localhost:5432/ImageSearch')
+app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://postgres:{password}@localhost:5432/ImageSearch'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.config['TEXT_RECOGNITION_URL'] = None

@@ -38,10 +38,7 @@ def get_text():
      for _ in range(n_words)])
 
 for i in tqdm(range(1000)):
-    n_images = random.randint(0, 4)
-    image_paths = [f'path{i}_{j}' for j in range(n_images)]
-    image_texts = [get_text() for _ in range(n_images)]
-    pub = Publication(random.choice(user_ids), get_text(), image_paths, image_texts)
+    pub = Publication(random.choice(user_ids), get_text())
     n_comments = random.randint(0, 4)
     for _ in range(n_comments):
         Comment(get_text(), pub.id, random.choice(user_ids))

@@ -8,16 +8,6 @@ from web.models import User
 import re
 
 
-def exist(form, field):
-    if not field.data and User.get(login=field.data):
-        raise ValidationError("Такой пользователь уже существует")
-
-
-def check_correct_name(form, field):
-    if not field.data or not re.fullmatch(r'[a-zA-Z0-9_]+', field.data):
-        raise ValidationError("В имени пользователя могут быть только цифры, латинские буквы и нижние подчёркивания")
-
-
 def not_exist(form, field):
     if not field.data and User.get(login=field.data) is None:
         raise ValidationError("Такого пользователя не существует")
@@ -30,6 +20,16 @@ def match(form, field):
         user = User.get(login=form.login_log.data)
     if user and not user.check_pass(field.data):
         raise ValidationError("Неправильный пароль")
+        
+
+def exist(form, field):
+    if field.data and User.get(login=field.data):
+        raise ValidationError("Такой пользователь уже существует")
+
+
+def check_correct_name(form, field):
+    if not field.data or not re.fullmatch(r'[a-zA-Z0-9_]+', field.data):
+        raise ValidationError("В имени пользователя могут быть только цифры, латинские буквы и нижние подчёркивания")
 
 
 class RegForm(FlaskForm):

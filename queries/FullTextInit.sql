@@ -12,14 +12,12 @@ CREATE INDEX comment_idx ON comment USING GIN (to_tsvector('russian', text));
 DROP TABLE IF EXISTS words;
 
 CREATE TABLE words AS
-SELECT DISTINCT (ts_lexize('russian_stem', word))[1] AS word
+SELECT DISTINCT word
 FROM ts_stat($$
-        SELECT to_tsvector('simple', text) FROM publication
-        UNION SELECT to_tsvector('simple', text) FROM image
-        UNION SELECT to_tsvector('simple', text) FROM comment
-    $$)
-WHERE ts_lexize('russian_stem', word) IS NOT NULL
-      AND array_length(ts_lexize('russian_stem', word), 1) = 1;
+        SELECT to_tsvector('russian', text) FROM publication
+        UNION SELECT to_tsvector('russian', text) FROM image
+        UNION SELECT to_tsvector('russian', text) FROM comment
+    $$);
 
 ALTER TABLE words ADD UNIQUE (word);
 
@@ -32,10 +30,8 @@ $$
         SELECT text FROM inserted;
 
         INSERT INTO words
-        SELECT (ts_lexize('russian_stem', word))[1] AS word
-        FROM ts_stat('SELECT to_tsvector(''simple'', text) FROM temp_inserted')
-        WHERE ts_lexize('russian_stem', word) IS NOT NULL
-              AND array_length(ts_lexize('russian_stem', word), 1) = 1
+        SELECT word
+        FROM ts_stat('SELECT to_tsvector(''russian'', text) FROM temp_inserted')
         ON CONFLICT DO NOTHING;
 
         RETURN NULL;
@@ -44,6 +40,7 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS update_publication_words ON publication;
 DROP TRIGGER IF EXISTS update_comment_words ON comment;
+DROP TRIGGER IF EXISTS update_image_words ON image;
 
 CREATE TRIGGER update_publication_words
     AFTER INSERT
@@ -55,6 +52,13 @@ EXECUTE PROCEDURE update_words();
 CREATE TRIGGER update_comment_words
     AFTER INSERT
     ON comment
+    REFERENCING NEW TABLE AS inserted
+    FOR EACH STATEMENT
+EXECUTE PROCEDURE update_words();
+
+CREATE TRIGGER update_image_words
+    AFTER INSERT
+    ON image
     REFERENCING NEW TABLE AS inserted
     FOR EACH STATEMENT
 EXECUTE PROCEDURE update_words();

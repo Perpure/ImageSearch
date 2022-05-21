@@ -40,3 +40,6 @@ def gather_comments_and_forms(publications):
 
 def get_str_date(date):
     return date.strftime('%d/%m/%Y %H:%M:%S')
+
+def get_author_name(table):
+    return User.get(id=table.user_id).name

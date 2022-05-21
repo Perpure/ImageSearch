@@ -1,9 +1,12 @@
 import hashlib
+import re
+
 from sqlalchemy import desc
 from web import db, app
 from datetime import datetime
 import requests
 from sqlalchemy import text
+
 
 class User(db.Model):
     __tablename__ = 'user'
@@ -11,13 +14,11 @@ class User(db.Model):
     login = db.Column(db.String(32), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)
     name = db.Column(db.String(32), nullable=False)
-    info = db.Column(db.String())
     publications = db.relationship('Publication', backref='author', lazy='select')
 
     def __init__(self, login, password):
         self.login = login
         self.name = login
-        self.channel_info = ""
         self.password = hashlib.sha512(password.encode("utf-8")).hexdigest()
         db.session.add(self)
         db.session.commit()
@@ -49,22 +50,22 @@ class Publication(db.Model):
     __tablename__ = 'publication'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     text = db.Column(db.String(), unique=False, nullable=True)
-    author_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     date = db.Column(db.DateTime, nullable=False)
     images = db.relationship('Image', backref='publication', lazy='select')
 
     def __init__(self, user_id, text='', image_paths=None, image_texts=None):
         self.date = datetime.now(tz=None)
-        self.author_id = user_id
+        self.user_id = user_id
         self.text = text
 
         db.session.add(self)
         db.session.commit()
 
-        if image_texts:
+        if image_texts and image_paths:
             for image_path, image_text in zip(image_paths, image_texts):
                 Image(image_path, self, image_text)
-        else:
+        elif image_paths:
             for image_path in image_paths:
                 Image(image_path, self)
         db.session.add(self)
@@ -76,10 +77,10 @@ class Publication(db.Model):
     @staticmethod
     def full_text_search(query):
         with db.engine.connect() as connection:
+            query = re.sub(r'[^А-Яа-яеё ]', '', query)
             result = connection.execute(text(('SET pg_trgm.word_similarity_threshold = 0.4;'
                                               f'SELECT * FROM full_text_search(\'{query}\');'))).all()
             return result
-
 
     @staticmethod
     def get_all_publications(limit=None, offset=None):
@@ -151,6 +152,5 @@ class Comment(db.Model):
         if id:
             return Comment.query.get(id)
         if publication_id:
-            return Comment.query.filter_by(publication_id=publication_id) \
-                .join(User)
+            return Comment.query.filter_by(publication_id=publication_id)
         return Comment.query.all()

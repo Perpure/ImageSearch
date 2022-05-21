@@ -4,7 +4,7 @@ from flask import redirect, render_template, session, url_for, request
 from web import app, images, imgs_path
 from web.forms import RegForm, LogForm, PublicationForm, CommentForm, SearchForm
 from web.models import User, Publication, Comment
-from web.helper import cur_user, extract_pub_id, gather_comments_and_forms, get_str_date
+from web.helper import cur_user, extract_pub_id, gather_comments_and_forms, get_str_date, get_author_name
 
 PUBS_NUM_ON_PAGE = 30
 
@@ -18,7 +18,7 @@ def main():
         publications = Publication.full_text_search(query)
         comments, comment_forms = gather_comments_and_forms(publications)
         return render_template('main.html', user=user, pubs_coms_forms=zip(publications, comments, comment_forms),
-                               search_form=search_form, get_str_date=get_str_date)
+                               search_form=search_form, get_str_date=get_str_date, get_author_name=get_author_name)
 
     if request.method == 'POST':
         pub_id = extract_pub_id(request)
@@ -35,7 +35,7 @@ def main():
 
     comments, comment_forms = gather_comments_and_forms(publications)
     return render_template('main.html', user=user, pubs_coms_forms=zip(publications, comments, comment_forms),
-                           search_form=search_form, get_str_date=get_str_date)
+                           search_form=search_form, get_str_date=get_str_date, get_author_name=get_author_name)
 
 @app.route('/reg', methods=['GET', 'POST'])
 def reg():

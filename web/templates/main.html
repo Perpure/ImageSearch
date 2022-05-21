@@ -31,7 +31,8 @@
                                 <div class="card shadow-2-strong mb-4 p-4" style="border-radius: 1rem;">
                                     <div class="mb-1"><b>{{ comment.name }}</b></div>
                                     <div class="mb-4">{{ comment.text }}</div>
-                                    <div class="float-end text-secondary">{{ comment.get_str_date() }}</div>
+                                    <div class="float-end text-secondary">{{ get_author_name(comment) + " "
+                                    + comment.get_str_date() }}</div>
                                 </div>
                             {% endfor %}
                         {% endif %}
@@ -50,13 +51,15 @@
 
                             </form>
                         {% endif %}
-                        <div class="float-end text-secondary">{{ get_str_date(pub_coms_forms[0].date) }}</div>
+                        <div class="float-end text-secondary">
+                            {{ get_author_name(pub_coms_forms[0]) + " " + get_str_date(pub_coms_forms[0].date) }}
+                        </div>
                     </div>
                 </div>
             {% endfor %}
         {% endif %}
     </div>
-    <div id="modal-window" class="modal">
+    <div id="modal-window" class="modal" style="z-index: 1000">
         <img class="modal-content" id="modal-img">
         <div id="caption"></div>
     </div>
